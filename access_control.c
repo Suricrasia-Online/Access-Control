@@ -19,11 +19,10 @@ const char* vshader = "#version 430\nvec2 y=vec2(1.,-1);\nvec4 x[4]={y.yyxx,y.xy
 #define CANVAS_WIDTH 1920
 #define CANVAS_HEIGHT 1080
 #define SCANLINE_SIZE 10
-#define WAVE_SAMPLES 1024
-#define CHAR_BUFF_SIZE 256
 
 #define DEBUG
 #define TIME_RENDER
+// #define SCISSORS
 
 static void quit_asm() {
 	asm volatile(".intel_syntax noprefix");
@@ -66,15 +65,18 @@ on_render (GtkGLArea *glarea, GdkGLContext *context)
 	glUseProgram(p);
 	glBindVertexArray(vao);
 	glVertexAttrib1f(0, 0);
-	// glUniform1i(0, 0);
 
+#ifdef SCISSORS
   glEnable(GL_SCISSOR_TEST);
   for (int i = 0; i < CANVAS_HEIGHT; i += SCANLINE_SIZE) {
 	  glScissor(0,i,1920,SCANLINE_SIZE);
+#endif
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+#ifdef SCISSORS
 		glFinish();
 		while (gtk_events_pending()) gtk_main_iteration();
   }
+#endif
 
 #ifdef TIME_RENDER
   printf("render time: %f\n", g_timer_elapsed(gtimer, NULL));

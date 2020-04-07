@@ -55,8 +55,8 @@ void main()
 	if (border > 0.45) { fragCol.xyz=bg;return;}
 	vec3 col = vec3(0.);
 	float acc = 0.;
-	for(float i = 0.; i < 1.; i+=0.2){
-		for(float j = 0.; j < 1.; j+=0.2){
+	for(float i = 0.; i < 1.; i+=0.1){
+		for(float j = 0.; j < 1.; j+=0.1){
 	acc+=1.;
 	vec2 uv = uv_org+vec2(i,j)/1080.f;
 	vec3 cam = normalize(vec3(1.6,uv));
