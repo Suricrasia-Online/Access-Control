@@ -89,7 +89,7 @@ static void on_realize(GtkGLArea *glarea)
 	// compile shader
 	GLuint f = glCreateShader(GL_FRAGMENT_SHADER);
 
-	glShaderSource(f, 1, &shader_frag_min, NULL);
+	glShaderSource(f, 1, &shader_frag, NULL);
 	glCompileShader(f);
 
 #ifdef DEBUG

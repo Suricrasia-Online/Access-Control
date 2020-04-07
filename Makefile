@@ -72,11 +72,8 @@ all : access_control check_size
 packer : vondehi/vondehi.asm 
 	cd vondehi; nasm -fbin -o vondehi vondehi.asm
 
-shader.frag.min : shader.frag Makefile
-	cp shader.frag shader.frag.min
-
-shader.h : shader.frag.min Makefile
-	mono ./shader_minifier.exe shader.frag.min -o shader.h
+shader.h : shader.frag Makefile
+	mono ./shader_minifier.exe shader.frag -o shader.h
 
 access_control.elf : access_control.c shader.h linker.ld Makefile
 	gcc -o $@ $< $(CFLAGS)
