@@ -73,7 +73,6 @@ float pixel_col(vec2 coord) {
 		for(float j = 0.; j < 1.; j+=0.25){
 			acc+=1.;
 			vec2 uv2 = uv+vec2(i,j)/1080.0;
-			//todo: viruses in bottom half?
 			col += scene_col(uv2);
 		}
 	}

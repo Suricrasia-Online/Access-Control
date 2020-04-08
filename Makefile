@@ -71,7 +71,7 @@ CFLAGS += -T linker.ld
 all : $(PROJNAME) check_size
 
 packer : vondehi/vondehi.asm 
-	cd vondehi; nasm -fbin -o vondehi vondehi.asm
+	cd vondehi; nasm -fbin -o vondehi -DNO_CHEATING vondehi.asm
 
 shader.h : shader.frag Makefile
 	mono ./shader_minifier.exe shader.frag -o shader.h
