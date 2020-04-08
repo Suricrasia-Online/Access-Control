@@ -44,21 +44,6 @@ float noise(vec2 p) {
 float scene_col(vec2 uv) {
 	vec3 cam = normalize(vec3(1.6,uv));
 	vec3 init = vec3(-35,0,0);
-
-	//todo: use erot here
-	vec2 mouse = vec2(4.1,3.12);
-	mouse.xy += normalize(vec2(hash(uv), hash(sin(uv))))*0.01;
-	mat3 rot_x = mat3(cos(mouse.x), sin(mouse.x), 0.0,
-		-sin(mouse.x), cos(mouse.x),
-		0.0, 0.0, 0.0, 1.0);
-	
-	mat3 rot_y = mat3(cos(mouse.y), 0.0, sin(mouse.y),
-		0.0, 1.0, 0.0,
-		-sin(mouse.y), 0.0, cos(mouse.y));
-	if (uv.y < 0.0) {
-		init*=rot_y*rot_x;
-		cam*=rot_y*rot_x;
-	}
 	
 	vec3 p = init;
 	bool hit = false;
