@@ -13,25 +13,39 @@
 #include <GL/glu.h>
 #include <GL/glext.h>
 
+#include "sys.h"
+
+#include <libspectre/spectre.h>
+#include "caption.h"
+
 #include "shader.h"
 const char* vshader = "#version 430\nvec2 y=vec2(1.,-1);\nvec4 x[4]={y.yyxx,y.xyxx,y.yxxx,y.xxxx};void main(){gl_Position=x[gl_VertexID];}";
 
 #define CANVAS_WIDTH 1920
 #define CANVAS_HEIGHT 1080
 #define SCANLINE_SIZE 10
+#define CHAR_BUFF_SIZE 256
 
 #define DEBUG
 #define TIME_RENDER
 // #define SCISSORS
 
 static void quit_asm() {
-	asm volatile(".intel_syntax noprefix");
-	asm volatile("xor edi, edi");
-	asm volatile("push 231"); //exit_group
-	asm volatile("pop rax");
-	asm volatile("syscall");
-	asm volatile(".att_syntax prefix");
+	SYS_exit_group(0);
 	__builtin_unreachable();
+}
+
+static void render_postscript(const unsigned char* postscript, unsigned int length, unsigned char** data) {
+	int fd = SYS_memfd_create("", 0);
+	SYS_write(fd, postscript, length);
+
+	static char memfd_path[CHAR_BUFF_SIZE];
+	sprintf(memfd_path, "/proc/self/fd/%d", fd);
+
+	SpectreDocument* doc = spectre_document_new();
+	spectre_document_load(doc, memfd_path);
+	int row_length;
+	spectre_document_render(doc, data, &row_length);
 }
 
 GLuint vao;
@@ -69,7 +83,7 @@ on_render (GtkGLArea *glarea, GdkGLContext *context)
 #ifdef SCISSORS
   glEnable(GL_SCISSOR_TEST);
   for (int i = 0; i < CANVAS_HEIGHT; i += SCANLINE_SIZE) {
-	  glScissor(0,i,1920,SCANLINE_SIZE);
+	  glScissor(0,i,CANVAS_WIDTH,SCANLINE_SIZE);
 #endif
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 #ifdef SCISSORS
@@ -150,6 +164,17 @@ static void on_realize(GtkGLArea *glarea)
 #endif
 
 	glGenVertexArrays(1, &vao);
+
+	GLuint renderedTex;
+	glGenTextures(1, &renderedTex);
+	glBindTexture(GL_TEXTURE_2D, renderedTex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	static unsigned char* rendered_data;
+	render_postscript(caption_ps, caption_ps_len, &rendered_data);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, CANVAS_WIDTH, CANVAS_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, rendered_data);
 }
 
 void _start() {

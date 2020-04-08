@@ -14,5 +14,5 @@ SECTIONS
   .rela.got         : {*(.rela.got*)}
   .dynsym           : {*(.dynsym*)}
   .bss              : {*(.bss*)}
-  .crap             : {*(.note*) *(.comment*) *(.eh_frame*) *(.eh_frame_hdr*) *(.note.gnu.build-id*) *(.got*) *(.got.plt*) *(.gnu.version*) *(.rela.dyn*) *(.shstrtab*) } 
+  .crap             : {*(.note*) *(.comment*) *(.eh_frame*) *(.eh_frame_hdr*) *(.note.gnu.build-id*) *(.got.plt*) *(.gnu.version*) *(.rela.dyn*) *(.shstrtab*) } 
 }

@@ -1,4 +1,5 @@
 #version 420
+uniform sampler2D tex;
 out vec4 fragCol;
 
 float linedist(vec2 p, vec2 a, vec2 b) {
@@ -51,7 +52,7 @@ void main()
 {
 	vec2 uv_org = (gl_FragCoord.xy - vec2(960.0, 540.0))/1080;
 	float border = max(max(abs(uv_org).x,abs(uv_org).y),0.43-abs(uv_org.y));
-	vec3 bg = vec3(0.99)+noise(uv_org*1080.f*vec2(0.4,1))*0.02;
+	vec3 bg = (vec3(0.99)+noise(uv_org*1080.f*vec2(0.4,1))*0.02)*sqrt(texture(tex, gl_FragCoord.xy/vec2(1920,-1080)).x);
 	if (border > 0.45) { fragCol.xyz=bg;return;}
 	vec3 col = vec3(0.);
 	float acc = 0.;

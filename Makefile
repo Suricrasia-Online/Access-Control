@@ -22,52 +22,53 @@
 # ~$ dpkg-query --showformat='${Version}' --show mesa-common-dev:amd64
 # 18.3.6-2+deb10u1
 
-
+PROJNAME := access_control
 
 #huge greets to donnerbrenn!
 CFLAGS = -Os -s -march=nocona -std=gnu11
 
-CFLAGS+= -fno-plt
-CFLAGS+= -fno-stack-protector -fno-stack-check
-CFLAGS+= -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-exceptions
-CFLAGS+= -funsafe-math-optimizations -ffast-math
-CFLAGS+= -fomit-frame-pointer
-CFLAGS+= -ffunction-sections -fdata-sections
-CFLAGS+= -fmerge-all-constants
-CFLAGS+= -fno-PIC -fno-PIE
-CFLAGS+= -malign-data=cacheline
-CFLAGS+= -mno-fancy-math-387 -mno-ieee-fp
-CFLAGS+= -Wall
-CFLAGS+= -Wextra
-CFLAGS+= -no-pie
+CFLAGS += -fno-plt
+CFLAGS += -fno-stack-protector -fno-stack-check
+CFLAGS += -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-exceptions
+CFLAGS += -funsafe-math-optimizations -ffast-math
+CFLAGS += -fomit-frame-pointer
+CFLAGS += -ffunction-sections -fdata-sections
+CFLAGS += -fmerge-all-constants
+CFLAGS += -fno-PIC -fno-PIE
+CFLAGS += -malign-data=cacheline
+CFLAGS += -mno-fancy-math-387 -mno-ieee-fp
+CFLAGS += -Wall
+CFLAGS += -Wextra
+CFLAGS += -no-pie
 #use with gcc7+:
-CFLAGS+=-flto
+CFLAGS += -flto
 
-CFLAGS+= -nostartfiles -nodefaultlibs
-CFLAGS+= `pkg-config --cflags gtk+-3.0`
-CFLAGS+= -lc
-CFLAGS+= -lGL
-CFLAGS+= -lglib-2.0
-CFLAGS+= -lgobject-2.0
-CFLAGS+= -lgtk-3
-CFLAGS+= -lgdk-3
+CFLAGS += -nostartfiles -nodefaultlibs
+CFLAGS += `pkg-config --cflags gtk+-3.0`
+CFLAGS += -lc
+CFLAGS += -lGL
+CFLAGS += -lglib-2.0
+CFLAGS += -lgobject-2.0
+CFLAGS += -lgtk-3
+CFLAGS += -lgdk-3
+CFLAGS += -lspectre
 
-CFLAGS+= -Wl,--build-id=none
-CFLAGS+= -Wl,-z,norelro
-CFLAGS+= -Wl,-z,nocombreloc
-CFLAGS+= -Wl,--gc-sections
-CFLAGS+= -Wl,-z,nodynamic-undefined-weak
-CFLAGS+= -Wl,--no-ld-generated-unwind-info
-CFLAGS+= -Wl,--no-eh-frame-hdr
-CFLAGS+= -Wl,-z,noseparate-code
-CFLAGS+= -Wl,--hash-style=sysv
-CFLAGS+= -Wl,--whole-archive
-CFLAGS+= -Wl,--print-gc-sections
-CFLAGS+=-T linker.ld
+CFLAGS += -Wl,--build-id=none
+CFLAGS += -Wl,-z,norelro
+CFLAGS += -Wl,-z,nocombreloc
+CFLAGS += -Wl,--gc-sections
+CFLAGS += -Wl,-z,nodynamic-undefined-weak
+CFLAGS += -Wl,--no-ld-generated-unwind-info
+CFLAGS += -Wl,--no-eh-frame-hdr
+CFLAGS += -Wl,-z,noseparate-code
+CFLAGS += -Wl,--hash-style=sysv
+CFLAGS += -Wl,--whole-archive
+CFLAGS += -Wl,--print-gc-sections
+CFLAGS += -T linker.ld
 
 .PHONY: clean check_size
 
-all : access_control check_size
+all : $(PROJNAME) check_size
 
 packer : vondehi/vondehi.asm 
 	cd vondehi; nasm -fbin -o vondehi vondehi.asm
@@ -75,13 +76,17 @@ packer : vondehi/vondehi.asm
 shader.h : shader.frag Makefile
 	mono ./shader_minifier.exe shader.frag -o shader.h
 
-access_control.elf : access_control.c shader.h linker.ld Makefile
+caption.h : caption.ps
+	xxd -i $< > $@
+	sed -i 's/unsigned char/const unsigned char/' $@
+
+$(PROJNAME).elf : $(PROJNAME).c shader.h caption.h linker.ld Makefile
 	gcc -o $@ $< $(CFLAGS)
 
-access_control_unpacked : access_control_opt.elf
+$(PROJNAME)_unpacked : $(PROJNAME)_opt.elf
 	mv $< $@
 
-access_control : access_control_opt.elf.packed
+$(PROJNAME) : $(PROJNAME)_opt.elf.packed
 	mv $< $@
 
 #all the rest of these rules just takes a compiled elf file and generates a packed version of it with vondehi
@@ -109,7 +114,7 @@ access_control : access_control_opt.elf.packed
 	chmod +x $@
 
 clean :
-	-rm *.elf *.xz shader.h access_control access_control_unpacked
+	-rm *.elf *.xz shader.h $(PROJNAME) $(PROJNAME)_unpacked
 
 check_size :
 	./sizelimit_check.sh
