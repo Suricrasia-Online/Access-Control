@@ -70,6 +70,9 @@ CFLAGS += -T linker.ld
 
 all : $(PROJNAME) check_size
 
+$(PROJNAME).zip : $(PROJNAME) $(PROJNAME)_unpacked README.txt screenshot.jpg
+	zip $@ $^
+
 packer : vondehi/vondehi.asm 
 	cd vondehi; nasm -fbin -o vondehi -DNO_CHEATING vondehi.asm
 
@@ -83,7 +86,7 @@ caption.h : caption.ps
 $(PROJNAME).elf : $(PROJNAME).c shader.h caption.h linker.ld Makefile
 	gcc -o $@ $< $(CFLAGS)
 
-$(PROJNAME)_unpacked : $(PROJNAME)_opt.elf
+$(PROJNAME)_unpacked : $(PROJNAME).elf
 	mv $< $@
 
 $(PROJNAME) : $(PROJNAME)_opt.elf.packed
@@ -106,7 +109,6 @@ $(PROJNAME) : $(PROJNAME)_opt.elf.packed
 
 %.xz : % Makefile
 	-rm $@
-# 	lzma --format=lzma -9 --extreme --lzma1=preset=9,lc=0,lp=0,pb=0,nice=124 --keep --stdout $< > $@
 	./nicer.py $< -o $@
 
 %.packed : %.xz packer Makefile
