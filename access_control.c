@@ -23,7 +23,7 @@ const char* vshader = "#version 430\nvec2 y=vec2(1.,-1);\nvec4 x[4]={y.yyxx,y.xy
 
 #define CANVAS_WIDTH 1920
 #define CANVAS_HEIGHT 1080
-#define SCANLINE_SIZE 10
+#define SCANLINE_SIZE 40
 #define CHAR_BUFF_SIZE 256
 
 #define DEBUG
@@ -90,6 +90,8 @@ on_render (GtkGLArea *glarea, GdkGLContext *context)
 		glFinish();
 		while (gtk_events_pending()) gtk_main_iteration();
   }
+#else
+	glFinish();
 #endif
 
 #ifdef TIME_RENDER

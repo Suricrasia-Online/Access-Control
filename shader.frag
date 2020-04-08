@@ -31,7 +31,6 @@ vec3 norm(vec3 p) {
     return normalize(scene(p) - vec3(scene(k[0]),scene(k[1]),scene(k[2])) );
 }
 
-
 #define FK(k) floatBitsToInt(cos(k))^floatBitsToInt(k)
 float hash(vec2 p) {
     int x = FK(p.x);int y = FK(p.y);
@@ -39,7 +38,7 @@ float hash(vec2 p) {
 }
 
 vec2 hash2(vec2 p) {
-    return vec2(hash(p*5.), hash(p));
+    return vec2(hash(sin(p)), hash(p));
 }
 
 float noise(vec2 p) {
@@ -83,14 +82,15 @@ float scene_col(vec2 uv) {
     return hit ? mix(fakediff*.45 + fakeref*2.,0.1,fog) : 0.1;
 }
 
-float pixel_col(vec2 uv) {
+float pixel_col(vec2 coord) {
+    vec2 uv = (coord - vec2(960.0, 540.0))/1080.0;
     float border = max(max(abs(uv).x,abs(uv).y),0.43-abs(uv.y));
     float bg = 0.99+noise(uv*1080.0*vec2(0.4,1))*0.02;
     if (border > 0.41) { return bg;}
     float col = 0.;
     float acc = 0.;
-    for(float i = 0.; i < 1.; i+=0.3){
-        for(float j = 0.; j < 1.; j+=0.3){
+    for(float i = 0.; i < 1.; i+=0.25){
+        for(float j = 0.; j < 1.; j+=0.25){
             acc+=1.;
             vec2 uv2 = uv+vec2(i,j)/1080.0;
             col += scene_col(uv2);
@@ -103,17 +103,16 @@ float pixel_col(vec2 uv) {
 
 void main()
 {
-    vec2 uv = (gl_FragCoord.xy - vec2(960.0, 540.0))/1080.0;
-
     float hist[256];
-    for (int i = 0 ; i < 256 ; i++ ) hist[i] = 0.;
-    float samps = 25.;
+    for (int i = 0 ; i < 256 ; i++ ) hist[i] = 0;
     float histmax = 0.;
-    float rad = 2.0;
+    float rad = 2;
 
-    for(float i = -rad; i < rad; i+=1){
-        for(float j = -rad; j < rad; j+=1){
-	        float samp = clamp(pixel_col(uv + vec2(i,j)/1080.0),0.,1.);
+    for(float i = -rad; i <= rad; i+=1){
+        for(float j = -rad; j <= rad; j+=1){
+        	vec2 off = vec2(i,j);
+        	if (length(off) > rad) continue;
+	        float samp = pow(clamp(pixel_col(gl_FragCoord.xy + off),0.,1.),2.);
 	        int pos = int(samp*254.);
 	        hist[pos] += 1.;
 	        histmax =max(histmax,hist[pos]);
@@ -127,5 +126,5 @@ void main()
         acc += weight;
     }
     
-    fragCol = vec4(color/acc)*sqrt(texture(tex, gl_FragCoord.xy/vec2(1920,-1080)).x);
+    fragCol = vec4(sqrt(color/acc))*pow(texture(tex, gl_FragCoord.xy/vec2(1920,-1080)).x,0.8);
 }
