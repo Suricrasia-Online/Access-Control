@@ -2,26 +2,64 @@
 uniform sampler2D tex;
 out vec4 fragCol;
 
-float linedist(vec2 p, vec2 a, vec2 b) {
-	float k = dot(p-a, b-a)/dot(b-a,b-a);
-	return distance(p,mix(a,b,clamp(k,0.,1.)));
+float linedist(float x, float y, float w) {
+	return length(vec2(x, max(0.,abs(y)-w)));
 }
 
+float fksquare(vec3 p, vec3 d) {
+	return max(linedist(p.x, p.z, d.z), linedist(p.x, p.y, d.y))-d.x;
+}
+
+vec3 erot(vec3 p, vec3 ax, float ro) {
+	return mix(dot(ax, p)*ax, p, cos(ro)) + cross(ax,p)*sin(ro);
+}
+
+#define FK(k) floatBitsToInt(cos(k))^floatBitsToInt(k)
+float hash(vec2 p) {
+	int x = FK(p.x);int y = FK(p.y);
+	return float((x*x+y)*(x-y*y)-x)/2.14e9;
+}
+
+int mat;
 float scene(vec3 p) {
-	float s = 1.25;
-	float mx = 10000.;
-	
-	p.z += floor(p.y/s)*acos(.0);
-	p.y = (fract(p.y/s)-0.5)*s;
-	for (int i = -1; i <= 1;i++){
-		vec3 g = p + vec3(0.,float(i)*s,float(i)*acos(0.));
-		float d1 = linedist(g.xy, vec2(0,0.2),vec2(0,-0.2))-0.5;
-		//greets to FabriceNeyret2 https://www.shadertoy.com/view/XsdBW8
-		float d2 = abs(sin(atan(g.y,g.x)/2.-g.z)*min(1.,length(g.xy)));
-		float d = length(vec2(d1,d2))/sqrt(2.)-0.05;
-		mx = min(d,mx);
+	if (p.z > 0.) {
+		mat = 1;
+		float s = 1.25;
+		float mx = 10000.;
+
+		p.z += floor(p.y/s)*acos(.0);
+		p.y = (fract(p.y/s)-0.5)*s;
+		for (int i = -1; i <= 1;i++){
+			vec3 g = p + vec3(0.,float(i)*s,float(i)*acos(0.));
+			float d1 = linedist(g.x, g.y, 0.2)-0.5;
+			//greets to FabriceNeyret2 https://www.shadertoy.com/view/XsdBW8
+			float d2 = abs(sin(atan(g.y,g.x)/2.-g.z)*min(1.,length(g.xy)));
+			float d = length(vec2(d1,d2))/sqrt(2.)-0.05;
+			mx = min(d,mx);
+		}
+		return mx;
 	}
-	return mx;
+	else {
+		p*=4.5;
+		vec2 scale = vec2(14.5, 11);
+		vec2 id = floor(p.yz/scale);
+		p = vec3(p.x, (fract(p.yz/scale) - 0.5)*scale);
+
+    float hs = hash(id);
+    p.zx+=hash(id.xx*6.4)*0.8;
+    float sides = fksquare(vec3(p.x+0.2,abs(p.y)-6.8,p.z), vec3(0.3,.3,10.));
+    p = erot(p, vec3(1,0,0), hs*hs*hs*0.04);
+    p.x+=hash(id*31.4)*0.3;
+		float handle = linedist(linedist(min(p.x+.5,0.), p.y, 1.)-0.8, p.z+1.5, 0.25)-.1;
+		float panel = fksquare(p, vec3(0.2,6.,5.));
+		vec3 labelpos = vec3(0.2,0.,-1.);
+		float label = max(fksquare(p+labelpos, vec3(0.2, 1.5, 1.)), -fksquare(p+labelpos, vec3(.5, 0.7, 0.5)));
+		float keyhole = max(linedist(p.x+.4, length(p.yz+vec2(3.2,1.5)), 0.35)-0.05, -fksquare(p+vec3(.4, 3.2,1.5), vec3(.1, 0.03, 0.18)));
+		float black = min(0.4-p.x, min(panel, sides));
+		float silver = min(min(label, keyhole), handle);
+		mat = silver < black ? 1 : 0;
+		return min(black, silver)/4.5;
+	}
 }
 
 vec3 norm(vec3 p) {
@@ -29,10 +67,8 @@ vec3 norm(vec3 p) {
 	return normalize(scene(p) - vec3(scene(k[0]),scene(k[1]),scene(k[2])) );
 }
 
-#define FK(k) floatBitsToInt(cos(k))^floatBitsToInt(k)
-float hash(vec2 p) {
-	int x = FK(p.x);int y = FK(p.y);
-	return float((x*x+y)*(x-y*y)-x)/2.14e9;
+vec2 hash2(vec2 p) {
+	return vec2(hash(p*5.), hash(p));
 }
 
 float noise(vec2 p) {
@@ -43,8 +79,8 @@ float noise(vec2 p) {
 
 float scene_col(vec2 uv) {
 	vec3 cam = normalize(vec3(1.6,uv));
-	vec3 init = vec3(-35,0,0);
-	
+	vec3 init = vec3(-35,0,uv.y>0.?3:-4);
+
 	vec3 p = init;
 	bool hit = false;
 	for (int i = 0; i < 50; i++) {
@@ -53,13 +89,15 @@ float scene_col(vec2 uv) {
 		if (distance(p,init) > 100.) break;
 		p += dist*cam;
 	}
-	
-	
+
+	int mymat = mat;
 	vec3 n = norm(p);
-	float fog = smoothstep(0.,100.,distance(p,init));
+	float ao = clamp((scene(p+n*0.1)+0.1)/.2, 0.,1.);
 	float fakediff = length(sin(n*3.)*0.5+0.5)/sqrt(3.);
 	float fakeref = pow(length(sin(reflect(cam,n)*4.)*0.5+0.5)/sqrt(3.),10.);
-	return hit ? mix(fakediff*.45 + fakeref*2.,0.1,fog) : 0.1;
+	float bright = uv.y>0?0.35:0.6;
+	if (!hit) return 0.07;
+	return mymat == 1 ? fakediff*bright + fakeref*1.5 : ao*fakediff*.15 + fakeref;
 }
 
 float pixel_col(vec2 coord) {

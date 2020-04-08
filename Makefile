@@ -106,8 +106,8 @@ $(PROJNAME) : $(PROJNAME)_opt.elf.packed
 
 %.xz : % Makefile
 	-rm $@
-	lzma --format=lzma -9 --extreme --lzma1=preset=9,lc=0,lp=0,pb=0,nice=124 --keep --stdout $< > $@
-# 	./nicer.py $< -o $@
+# 	lzma --format=lzma -9 --extreme --lzma1=preset=9,lc=0,lp=0,pb=0,nice=124 --keep --stdout $< > $@
+	./nicer.py $< -o $@
 
 %.packed : %.xz packer Makefile
 	cat ./vondehi/vondehi $< > $@
