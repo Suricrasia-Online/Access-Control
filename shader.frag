@@ -14,11 +14,8 @@ vec3 erot(vec3 p, vec3 ax, float ro) {
 	return mix(dot(ax, p)*ax, p, cos(ro)) + cross(ax,p)*sin(ro);
 }
 
-#define FK(k) floatBitsToInt(cos(k))^floatBitsToInt(k)
-float hash(vec2 p) {
-	int x = FK(p.x);int y = FK(p.y);
-	return float((x*x+y)*(x-y*y)-x)/2.14e9;
-}
+/*   DAVE HOSKINS' HASH FUNCTIONS (modified so it's between -1 and 1)  */
+float hash(vec2 p){vec3 p3 = fract(vec3(p.xyx)*.1031); p3 += dot(p3,p3.yzx+19.19); return 2*fract((p3.x+p3.y)*p3.z)-1;}
 
 int mat;
 float scene(vec3 p) {
@@ -46,10 +43,10 @@ float scene(vec3 p) {
 		p = vec3(p.x, (fract(p.yz/scale) - 0.5)*scale);
 
     float hs = hash(id);
-    p.zx+=hash(id.xx*27.4)*0.8;
+    p.zx+=hash(id.xx+24.4)*0.8;
     float sides = fksquare(vec3(p.x+0.2,abs(p.y)-6.8,p.z), vec3(0.3,.3,10.));
     p = erot(p, vec3(1,0,0), hs*hs*hs*0.04);
-    p = erot(p, vec3(0,0,1), hash(id*47.4)*hs*0.01);
+    p = erot(p, vec3(0,0,1), hash(id+47.4)*hs*0.01);
     p.x+=hs*hs*0.3;
 		float handle = linedist(linedist(min(p.x+.5,0.), p.y, 1.)-0.8, p.z+1.5, 0.25)-.1;
 		float panel = fksquare(p, vec3(0.25,6.,5.));
@@ -57,7 +54,7 @@ float scene(vec3 p) {
 		float label = max(fksquare(p+labelpos, vec3(0.2, 1.5, 1.)), -fksquare(p+labelpos, vec3(.5, 0.7, 0.5)));
 		float keyhole = max(linedist(p.x+.4, length(p.yz+vec2(3.2,1.5)), 0.35)-0.05, -fksquare(p+vec3(.4, 3.2,1.5), vec3(.1, 0.03, 0.18)));
 		float black = min(0.4-p.x, min(panel, sides));
-		float silver = min(min(label, keyhole), handle);
+		float silver = min(min(label, keyhole), handle*0.9);
 		mat = silver < black ? 1 : 0;
 		return min(black, silver)/4.8;
 	}

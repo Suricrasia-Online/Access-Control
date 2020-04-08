@@ -71,6 +71,7 @@ CFLAGS += -T linker.ld
 all : $(PROJNAME) check_size
 
 $(PROJNAME).zip : $(PROJNAME) $(PROJNAME)_unpacked README.txt screenshot.jpg
+	-rm $@
 	zip $@ $^
 
 packer : vondehi/vondehi.asm 
