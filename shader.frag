@@ -40,25 +40,26 @@ float scene(vec3 p) {
 		return mx;
 	}
 	else {
-		p*=4.5;
+		p*=4.8;
 		vec2 scale = vec2(14.5, 11);
 		vec2 id = floor(p.yz/scale);
 		p = vec3(p.x, (fract(p.yz/scale) - 0.5)*scale);
 
     float hs = hash(id);
-    p.zx+=hash(id.xx*6.4)*0.8;
+    p.zx+=hash(id.xx*27.4)*0.8;
     float sides = fksquare(vec3(p.x+0.2,abs(p.y)-6.8,p.z), vec3(0.3,.3,10.));
     p = erot(p, vec3(1,0,0), hs*hs*hs*0.04);
-    p.x+=hash(id*31.4)*0.3;
+    p = erot(p, vec3(0,0,1), hash(id*47.4)*hs*0.01);
+    p.x+=hs*hs*0.3;
 		float handle = linedist(linedist(min(p.x+.5,0.), p.y, 1.)-0.8, p.z+1.5, 0.25)-.1;
-		float panel = fksquare(p, vec3(0.2,6.,5.));
+		float panel = fksquare(p, vec3(0.25,6.,5.));
 		vec3 labelpos = vec3(0.2,0.,-1.);
 		float label = max(fksquare(p+labelpos, vec3(0.2, 1.5, 1.)), -fksquare(p+labelpos, vec3(.5, 0.7, 0.5)));
 		float keyhole = max(linedist(p.x+.4, length(p.yz+vec2(3.2,1.5)), 0.35)-0.05, -fksquare(p+vec3(.4, 3.2,1.5), vec3(.1, 0.03, 0.18)));
 		float black = min(0.4-p.x, min(panel, sides));
 		float silver = min(min(label, keyhole), handle);
 		mat = silver < black ? 1 : 0;
-		return min(black, silver)/4.5;
+		return min(black, silver)/4.8;
 	}
 }
 
@@ -79,7 +80,7 @@ float noise(vec2 p) {
 
 float scene_col(vec2 uv) {
 	vec3 cam = normalize(vec3(1.6,uv));
-	vec3 init = vec3(-35,0,uv.y>0.?3:-4);
+	vec3 init = vec3(-35,0,uv.y>0.?3:-4.2);
 
 	vec3 p = init;
 	bool hit = false;
