@@ -28,7 +28,7 @@ const char* vshader = "#version 430\nvec2 y=vec2(1.,-1);\nvec4 x[4]={y.yyxx,y.xy
 
 #define DEBUG
 #define TIME_RENDER
-// #define SCISSORS
+#define SCISSORS
 
 static void quit_asm() {
 	SYS_exit_group(0);
