@@ -42,12 +42,12 @@ float scene(vec3 p) {
 		vec2 id = floor(p.yz/scale);
 		p = vec3(p.x, (fract(p.yz/scale) - 0.5)*scale);
 
-    float hs = hash(id);
-    p.zx+=hash(id.xx+24.4)*0.8;
-    float sides = fksquare(vec3(p.x+0.2,abs(p.y)-6.8,p.z), vec3(0.3,.3,10.));
-    p = erot(p, vec3(1,0,0), hs*hs*hs*0.04);
-    p = erot(p, vec3(0,0,1), hash(id+47.4)*hs*0.01);
-    p.x+=hs*hs*0.3;
+		float hs = hash(id);
+		p.zx+=hash(id.xx+24.4)*0.8;
+		float sides = fksquare(vec3(p.x+0.2,abs(p.y)-6.8,p.z), vec3(0.3,.3,10.));
+		p = erot(p, vec3(1,0,0), hs*hs*hs*0.04);
+		p = erot(p, vec3(0,0,1), hash(id+47.4)*hs*0.01);
+		p.x+=hs*hs*0.3;
 		float handle = linedist(linedist(min(p.x+.5,0.), p.y, 1.)-0.8, p.z+1.5, 0.25)-.1;
 		float panel = fksquare(p, vec3(0.25,6.,5.));
 		vec3 labelpos = vec3(0.2,0.,-1.);

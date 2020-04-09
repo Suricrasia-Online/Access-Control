@@ -75,7 +75,7 @@ $(PROJNAME).zip : $(PROJNAME) $(PROJNAME)_unpacked README.txt screenshot.jpg
 	zip $@ $^
 
 packer : vondehi/vondehi.asm 
-	cd vondehi; nasm -fbin -o vondehi -DNO_CHEATING vondehi.asm
+	cd vondehi; nasm -fbin -o vondehi -DWANT_ARGV -DNO_CHEATING vondehi.asm
 
 shader.h : shader.frag Makefile
 	mono ./shader_minifier.exe shader.frag -o shader.h
