@@ -125,11 +125,13 @@ void main()
 	float histmax = 0.;
 	float rad = 2;
 
+	float mainsamp = 0;
 	for(float i = -rad; i <= rad; i+=1){
 		for(float j = -rad; j <= rad; j+=1){
 			vec2 off = vec2(i,j);
 			if (length(off) > rad) continue;
 			float samp = pow(clamp(pixel_col(gl_FragCoord.xy + off),0.,1.),2.);
+			if (i == 0 && j == 0) mainsamp = samp;
 			int pos = int(samp*254.);
 			hist[pos] += 1.;
 			histmax =max(histmax,hist[pos]);
@@ -143,5 +145,5 @@ void main()
 		acc += weight;
 	}
 	
-	fragCol = vec4(sqrt(color/acc))*pow(texture(tex, gl_FragCoord.xy/vec2(1920,-1080)).x,0.8);
+	fragCol = vec4(sqrt(mix(color/acc, mainsamp, 0.25)))*pow(texture(tex, gl_FragCoord.xy/vec2(1920,-1080)).x,0.8);
 }
