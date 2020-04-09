@@ -18,6 +18,7 @@ vec3 erot(vec3 p, vec3 ax, float ro) {
 float hash(vec2 p){vec3 p3 = fract(vec3(p.xyx)*.1031); p3 += dot(p3,p3.yzx+19.19); return 2*fract((p3.x+p3.y)*p3.z)-1;}
 
 int mat;
+vec4 labelcoords;
 float scene(vec3 p) {
 	if (p.z > 0.) {
 		mat = 1;
@@ -51,6 +52,7 @@ float scene(vec3 p) {
 		float handle = linedist(linedist(min(p.x+.5,0.), p.y, 1.)-0.8, p.z+1.5, 0.25)-.1;
 		float panel = fksquare(p, vec3(0.25,6.,5.));
 		vec3 labelpos = vec3(0.2,0.,-1.);
+		labelcoords=vec4(p.yz+labelpos.yz, id);
 		float label = max(fksquare(p+labelpos, vec3(0.2, 1.5, 1.)), -fksquare(p+labelpos, vec3(.5, 0.7, 0.5)));
 		float keyhole = max(linedist(p.x+.4, length(p.yz+vec2(3.2,1.5)), 0.35)-0.05, -fksquare(p+vec3(.4, 3.2,1.5), vec3(.1, 0.03, 0.18)));
 		float black = min(0.4-p.x, min(panel, sides));
@@ -89,13 +91,16 @@ float scene_col(vec2 uv) {
 	}
 
 	int mymat = mat;
+	vec4 mylabelcoords = labelcoords;
 	vec3 n = norm(p);
 	float ao = clamp((scene(p+n*0.1)+0.1)/.2, 0.,1.);
 	float fakediff = length(sin(n*3.)*0.5+0.5)/sqrt(3.);
 	float fakeref = pow(length(sin(reflect(cam,n)*4.)*0.5+0.5)/sqrt(3.),10.);
 	float bright = uv.y>0?0.35:0.6;
 	if (!hit) return 0.07;
-	return mymat == 1 ? fakediff*bright + fakeref*1.5 : ao*fakediff*.15 + fakeref;
+	if (mymat == 1) return fakediff*bright + fakeref*1.5;
+	if (abs(mylabelcoords.x) < 1.2 && abs(mylabelcoords.y) < 1) fakediff*= 8;
+	return ao*fakediff*.15 + fakeref;
 }
 
 float pixel_col(vec2 coord) {

@@ -53,6 +53,7 @@ GLuint p;
 
 bool rendered = false;
 bool flipped = false;
+bool compiled = false;
 
 #ifdef TIME_RENDER
 GTimer* gtimer;
@@ -68,42 +69,8 @@ static gboolean check_escape(GtkWidget *widget, GdkEventKey *event)
 	return FALSE;
 }
 
-static gboolean
-on_render (GtkGLArea *glarea, GdkGLContext *context)
+static void compile_shader()
 {
-	(void)context;
-	if (rendered || gtk_widget_get_allocated_width((GtkWidget*)glarea) < CANVAS_WIDTH) return TRUE;
-	if (!flipped) { gtk_gl_area_queue_render(glarea); flipped = true; return TRUE; }
-
-	rendered = true;
-	glUseProgram(p);
-	glBindVertexArray(vao);
-	glVertexAttrib1f(0, 0);
-
-#ifdef SCISSORS
-  glEnable(GL_SCISSOR_TEST);
-  for (int i = 0; i < CANVAS_HEIGHT; i += SCANLINE_SIZE) {
-	  glScissor(0,i,CANVAS_WIDTH,SCANLINE_SIZE);
-#endif
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-#ifdef SCISSORS
-		glFinish();
-		while (gtk_events_pending()) gtk_main_iteration();
-  }
-#else
-	glFinish();
-#endif
-
-#ifdef TIME_RENDER
-  printf("render time: %f\n", g_timer_elapsed(gtimer, NULL));
-#endif
-  return TRUE;
-}
-
-static void on_realize(GtkGLArea *glarea)
-{
-	gtk_gl_area_make_current(glarea);
-
 	// compile shader
 	GLuint f = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -179,6 +146,39 @@ static void on_realize(GtkGLArea *glarea)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, CANVAS_WIDTH, CANVAS_HEIGHT, 0, GL_BGRA, GL_UNSIGNED_BYTE, rendered_data);
 }
 
+static gboolean
+on_render (GtkGLArea *glarea, GdkGLContext *context)
+{
+	(void)context;
+	if (rendered || gtk_widget_get_allocated_width((GtkWidget*)glarea) < CANVAS_WIDTH) return TRUE;
+	if (!flipped) { gtk_gl_area_queue_render(glarea); flipped = true; return TRUE; }
+	if (!compiled) { compile_shader(); compiled = true; }
+
+	rendered = true;
+	glUseProgram(p);
+	glBindVertexArray(vao);
+	glVertexAttrib1f(0, 0);
+
+#ifdef SCISSORS
+  glEnable(GL_SCISSOR_TEST);
+  for (int i = 0; i < CANVAS_HEIGHT; i += SCANLINE_SIZE) {
+	  glScissor(0,i,CANVAS_WIDTH,SCANLINE_SIZE);
+#endif
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+#ifdef SCISSORS
+		glFinish();
+		while (gtk_events_pending()) gtk_main_iteration();
+  }
+#else
+	glFinish();
+#endif
+
+#ifdef TIME_RENDER
+  printf("render time: %f\n", g_timer_elapsed(gtimer, NULL));
+#endif
+  return TRUE;
+}
+
 void _start() {
 	asm volatile("sub $8, %rsp\n");
 #ifdef TIME_RENDER
@@ -198,7 +198,7 @@ void _start() {
 
 	g_signal_connect(win, "destroy", gtk_main_quit, NULL);
 	g_signal_connect(win, "key_press_event", G_CALLBACK(check_escape), NULL);
-	g_signal_connect(glarea, "realize", G_CALLBACK(on_realize), NULL);
+	// g_signal_connect(glarea, "realize", G_CALLBACK(on_realize), NULL);
 	g_signal_connect(glarea, "render", G_CALLBACK(on_render), NULL);
 
 	gtk_widget_show_all (win);
